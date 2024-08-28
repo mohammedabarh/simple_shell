@@ -8,7 +8,8 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 
-
+int readCmd(void);
+char *rmvchara(char *str, int len);
 
 
 

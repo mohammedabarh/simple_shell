@@ -4,16 +4,15 @@
  * main - Serves as the entry point for the application
  *
  * Returns: 0 if the program completes successfully
- *
  */
-
 int main(void)
 {
-	while(1)
-	{
-		readcmd();
-	}
+	/* Recursive function to maintain an interactive prompt */
+    while (1)
+    {
+        readCmd();
+    }
 
-	return (0);
+    return (0);
 }
 
