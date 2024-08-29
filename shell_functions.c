@@ -1,3 +1,4 @@
+
 #include "shell.h"
 
 char **split_line(char *line, char *delim)
@@ -120,6 +121,7 @@ int launch(char **args)
     pid = fork();
     if (pid == 0)
     {
+        /* Child process */
         command_path = get_location(args[0]);
         if (command_path == NULL)
         {
@@ -135,10 +137,12 @@ int launch(char **args)
     }
     else if (pid < 0)
     {
+        /* Error forking */
         perror("Error:");
     }
     else
     {
+        /* Parent process */
         do {
             waitpid(pid, &status, WUNTRACED);
         } while (!WIFEXITED(status) && !WIFSIGNALED(status));

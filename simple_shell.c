@@ -1,5 +1,10 @@
 #include "shell.h"
 
+/**
+ * main - Entry point for the simple shell
+ *
+ * Return: Always 0 (Success)
+ */
 int main(void)
 {
     char *input = NULL;
@@ -24,6 +29,7 @@ int main(void)
             break;
         }
 
+        /* Remove newline character */
         input[strcspn(input, "\n")] = '\0';
 
         commands = split_line(input, ";");
@@ -64,5 +70,6 @@ int main(void)
     }
 
     free(input);
-    return (0);
+    return 0;
 }
+

@@ -13,12 +13,12 @@ int shell_cd(char **args)
     else if (strcmp(dir, "-") == 0)
     {
         dir = getenv("OLDPWD");
-        if (dir == NULL)
-        {
-            fprintf(stderr, "cd: OLDPWD not set\n");
-            return 1;
-        }
-        printf("%s\n", dir);
+    }
+
+    if (dir == NULL)
+    {
+        fprintf(stderr, "cd: No such file or directory\n");
+        return 1;
     }
 
     if (chdir(dir) != 0)
@@ -29,12 +29,7 @@ int shell_cd(char **args)
 
     if (getcwd(cwd, sizeof(cwd)) != NULL)
     {
-        setenv("OLDPWD", getenv("PWD"), 1);
         setenv("PWD", cwd, 1);
-    }
-    else
-    {
-        perror("getcwd");
     }
 
     return 1;
@@ -42,50 +37,33 @@ int shell_cd(char **args)
 
 int shell_help(char **args)
 {
-    int i;
-    char *builtin_str[] = {
-        "cd",
-        "help",
-        "exit",
-        "env",
-        "setenv",
-        "unsetenv"
-    };
     (void)args;
-
-    printf("Simple Shell\n");
-    printf("Type program names and arguments, and hit enter.\n");
-    printf("The following are built in:\n");
-
-    for (i = 0; i < 6; i++)
-    {
-        printf("  %s\n", builtin_str[i]);
-    }
-
-    printf("Use the man command for information on other programs.\n");
+    printf("Simple Shell Help:\n");
+    printf("cd [dir] - Change the current directory to dir or to HOME if dir is not provided.\n");
+    printf("help - Display information about built-in commands.\n");
+    printf("exit - Exit the shell.\n");
+    printf("env - Print the current environment.\n");
+    printf("setenv [var] [value] - Set an environment variable.\n");
+    printf("unsetenv [var] - Unset an environment variable.\n");
     return 1;
 }
 
 int shell_exit(char **args)
 {
-    int status = 0;
-
-    if (args[1] != NULL)
-    {
-        status = atoi(args[1]);
-    }
-    exit(status);
+    (void)args;
+    return 0;
 }
 
 int shell_env(char **args)
 {
-    int i = 0;
+    char **environ_ptr;
     (void)args;
-
-    while (environ[i])
+    
+    environ_ptr = environ;
+    while (*environ_ptr)
     {
-        printf("%s\n", environ[i]);
-        i++;
+        printf("%s\n", *environ_ptr);
+        environ_ptr++;
     }
     return 1;
 }
@@ -94,14 +72,13 @@ int shell_setenv(char **args)
 {
     if (args[1] == NULL || args[2] == NULL)
     {
-        fprintf(stderr, "Usage: setenv VARIABLE VALUE\n");
+        fprintf(stderr, "Usage: setenv VAR VALUE\n");
         return 1;
     }
 
     if (setenv(args[1], args[2], 1) != 0)
     {
-        fprintf(stderr, "Failed to set environment variable\n");
-        return 1;
+        perror("setenv");
     }
 
     return 1;
@@ -111,14 +88,13 @@ int shell_unsetenv(char **args)
 {
     if (args[1] == NULL)
     {
-        fprintf(stderr, "Usage: unsetenv VARIABLE\n");
+        fprintf(stderr, "Usage: unsetenv VAR\n");
         return 1;
     }
 
     if (unsetenv(args[1]) != 0)
     {
-        fprintf(stderr, "Failed to unset environment variable\n");
-        return 1;
+        perror("unsetenv");
     }
 
     return 1;
