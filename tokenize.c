@@ -15,6 +15,7 @@ int tokenize(char *cmd, char *Argcmd[])
 	
 	while (tkn)
 	{
+		printf("%s", tkn);
 		Argcmd[count++] = tkn;
 		tkn = strtok(NULL, dm);
 	}
