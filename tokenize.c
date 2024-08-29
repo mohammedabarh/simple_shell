@@ -19,6 +19,8 @@ int tokenize(char *cmd, char *Argcmd[])
 		Argcmd[count++] = tkn;
 		tkn = strtok(NULL, dm);
 	}
+
+	Argcmd[count] = NULL;
 	
 	return (count);
 }

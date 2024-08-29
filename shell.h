@@ -12,6 +12,7 @@
 
 int readCmd(void);
 int tokenize(char *cmd, char *Argcmd[]);
+int exe(char *Argcmd[]);
 char *rmvchara(char *str, int len);
 
 
