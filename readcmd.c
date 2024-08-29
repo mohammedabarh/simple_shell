@@ -9,7 +9,7 @@
 int readCmd(void)
 {
     size_t n = 0;
-    char *buff = NULL, *cmd;
+    char *buff = NULL, *cmd, *Argcmd[MAX_ARG];
     int size;
 
     size = getline(&buff, &n, stdin);
@@ -28,7 +28,8 @@ int readCmd(void)
     }
 
     cmd = rmvchara(buff, size);
-
+    tokenize(cmd, Argcmd);
+ 
 
     free(buff);
     return (size);

@@ -8,7 +8,10 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 
+#define MAX_ARG 125
+
 int readCmd(void);
+int tokenize(char *cmd, char *Argcmd[]);
 char *rmvchara(char *str, int len);
 
 
