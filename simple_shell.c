@@ -1,70 +1,41 @@
 #include "shell.h"
 
-int main(int argc, char **argv)
+/**
+ * main - Entry point for the simple shell
+ *
+ * Return: Always 0 (Success)
+ */
+int main(void)
 {
-    char *input;
+    char *input = NULL;
+    size_t input_size = 0;
+    ssize_t read_size;
     char **args;
-    int status;
-    int interactive = isatty(STDIN_FILENO);
+    int status = 1;
 
-    /* Initialize shell data */
-    shell_data_t shell_data;
-    initialize_shell_data(&shell_data);
-
-    if (argc == 2)
+    while (status)
     {
-        return execute_file(argv[1], &shell_data);
-    }
-
-    do {
-        if (interactive)
+        if (isatty(STDIN_FILENO))
             printf("($) ");
 
-        input = read_line();
-        if (!input)
-            break;
+        read_size = getline(&input, &input_size, stdin);
 
-        /* Handle comments */
-        char *comment = strchr(input, '#');
-        if (comment)
-            *comment = '\0';
-
-        /* Handle multiple commands (;) */
-        char **commands = split_line(input, ";");
-        for (int i = 0; commands[i] != NULL; i++)
+        if (read_size == -1)
         {
-            /* Handle logical operators (&& and ||) */
-            char **logical_ops = split_logical_ops(commands[i]);
-            int prev_status = 1;
-
-            for (int j = 0; logical_ops[j] != NULL; j++)
-            {
-                if (strcmp(logical_ops[j], "&&") == 0)
-                {
-                    if (prev_status == 0)
-                        break;
-                    continue;
-                }
-                else if (strcmp(logical_ops[j], "||") == 0)
-                {
-                    if (prev_status != 0)
-                        break;
-                    continue;
-                }
-
-                args = split_line(logical_ops[j], TOKEN_DELIM);
-                status = execute(args, &shell_data);
-                free(args);
-
-                prev_status = status;
-            }
-
-            free(logical_ops);
+            if (isatty(STDIN_FILENO))
+                printf("\n");
+            break;
         }
-        free(commands);
-        free(input);
-    } while (status);
 
-    cleanup_shell_data(&shell_data);
-    return EXIT_SUCCESS;
+        /* Remove newline character */
+        input[strcspn(input, "\n")] = '\0';
+
+        args = split_line(input);
+        status = execute(args);
+
+        free(args);
+    }
+
+    free(input);
+    return (0);
 }

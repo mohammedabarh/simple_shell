@@ -1,150 +1,84 @@
 #include "shell.h"
 
-int shell_cd(char **args, shell_data_t *shell_data)
+/**
+ * shell_cd - Changes the current directory
+ * @args: Arguments (args[1] is the directory)
+ *
+ * Return: 1 on success, 0 otherwise
+ */
+int shell_cd(char **args)
 {
-    char *dir = args[1];
-    char cwd[PATH_MAX];
-    char *home = get_env_value("HOME", shell_data->env);
-
-    if (dir == NULL)
+    if (args[1] == NULL)
     {
-        dir = home;
-    }
-    else if (strcmp(dir, "-") == 0)
-    {
-        dir = get_env_value("OLDPWD", shell_data->env);
-        if (dir == NULL)
-        {
-            fprintf(stderr, "cd: OLDPWD not set\n");
-            return 1;
-        }
-        printf("%s\n", dir);
-    }
-
-    if (chdir(dir) != 0)
-    {
-        perror("cd");
-        return 1;
-    }
-
-    if (getcwd(cwd, sizeof(cwd)) != NULL)
-    {
-        set_env_value("OLDPWD", get_env_value("PWD", shell_data->env), &shell_data->env);
-        set_env_value("PWD", cwd, &shell_data->env);
+        fprintf(stderr, "Expected argument to \"cd\"\n");
     }
     else
     {
-        perror("getcwd");
+        if (chdir(args[1]) != 0)
+        {
+            perror("Error");
+        }
     }
-
     return 1;
 }
 
-int shell_exit(char **args, shell_data_t *shell_data)
+/**
+ * shell_help - Prints help information
+ * @args: Arguments (not used)
+ *
+ * Return: Always returns 1
+ */
+int shell_help(char **args)
 {
-    int status = shell_data->last_status;
+    int i;
+    char *builtin_str[] = {
+        "cd",
+        "help",
+        "exit",
+        "env"
+    };
+    (void)args;
 
-    if (args[1] != NULL)
+    printf("Simple Shell\n");
+    printf("Type program names and arguments, and hit enter.\n");
+    printf("The following are built in:\n");
+
+    for (i = 0; i < 4; i++)
     {
-        status = atoi(args[1]);
+        printf("  %s\n", builtin_str[i]);
     }
-    cleanup_shell_data(shell_data);
-    exit(status);
+
+    printf("Use the man command for information on other programs.\n");
+    return 1;
 }
 
-int shell_env(char **args, shell_data_t *shell_data)
+/**
+ * shell_exit - Exits the shell
+ * @args: Arguments (not used)
+ *
+ * Return: Always returns 0
+ */
+int shell_exit(char **args)
 {
     (void)args;
-    for (int i = 0; shell_data->env[i]; i++)
-    {
-        printf("%s\n", shell_data->env[i]);
-    }
-    return 1;
+    return 0;
 }
 
-int shell_setenv(char **args, shell_data_t *shell_data)
+/**
+ * shell_env - Prints the current environment
+ * @args: Arguments (not used)
+ *
+ * Return: Always returns 1
+ */
+int shell_env(char **args)
 {
-    if (args[1] == NULL || args[2] == NULL)
-    {
-        fprintf(stderr, "Usage: setenv VARIABLE VALUE\n");
-        return 1;
-    }
+    int i = 0;
+    (void)args;
 
-    if (set_env_value(args[1], args[2], &shell_data->env) != 0)
+    while (environ[i])
     {
-        fprintf(stderr, "Failed to set environment variable\n");
-        return 1;
-    }
-
-    return 1;
-}
-
-int shell_unsetenv(char **args, shell_data_t *shell_data)
-{
-    if (args[1] == NULL)
-    {
-        fprintf(stderr, "Usage: unsetenv VARIABLE\n");
-        return 1;
-    }
-
-    if (unset_env_value(args[1], &shell_data->env) != 0)
-    {
-        fprintf(stderr, "Failed to unset environment variable\n");
-        return 1;
-    }
-
-    return 1;
-}
-
-int shell_alias(char **args, shell_data_t *shell_data)
-{
-    if (args[1] == NULL)
-    {
-        /* Print all aliases */
-        alias_t *current = shell_data->aliases;
-        while (current)
-        {
-            printf("%s='%s'\n", current->name, current->value);
-            current = current->next;
-        }
-    }
-    else if (strchr(args[1], '=') == NULL)
-    {
-        /* Print specific aliases */
-        for (int i = 1; args[i]; i++)
-        {
-            alias_t *alias = shell_data->aliases;
-            while (alias)
-            {
-                if (strcmp(alias->name, args[i]) == 0)
-                {
-                    printf("%s='%s'\n", alias->name, alias->value);
-                    break;
-                }
-                alias = alias->next;
-            }
-            if (!alias)
-            {
-                fprintf(stderr, "alias: %s not found\n", args[i]);
-            }
-        }
-    }
-    else
-    {
-        /* Set new aliases */
-        for (int i = 1; args[i]; i++)
-        {
-            char *name = strtok(args[i], "=");
-            char *value = strtok(NULL, "");
-            if (name && value)
-            {
-                alias_t *new_alias = malloc(sizeof(alias_t));
-                new_alias->name = strdup(name);
-                new_alias->value = strdup(value);
-                new_alias->next = shell_data->aliases;
-                shell_data->aliases = new_alias;
-            }
-        }
+        printf("%s\n", environ[i]);
+        i++;
     }
     return 1;
 }
