@@ -60,8 +60,13 @@ int shell_help(char **args)
  */
 int shell_exit(char **args)
 {
-    (void)args;
-    return 0;
+    int status = 0;
+
+    if (args[1] != NULL)
+    {
+        status = atoi(args[1]);
+    }
+    exit(status);
 }
 
 /**
