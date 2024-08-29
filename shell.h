@@ -7,15 +7,25 @@
 #include <string.h>
 #include <sys/types.h>
 #include <sys/wait.h>
+#include <sys/stat.h>
+#include <limits.h>
+#include <fcntl.h>
+#include <errno.h>
 
-#define MAX_ARG 125
+#define BUFFER_SIZE 1024
+#define TOKEN_DELIM " \t\r\n\a"
 
-int readCmd(void);
-int tokenize(char *cmd, char *Argcmd[]);
-int exe(char *Argcmd[]);
-char *rmvchara(char *str, int len);
+/* Function prototypes */
+char **split_line(char *line);
+int execute(char **args);
+int launch(char **args);
+char *get_location(char *command);
+int shell_cd(char **args);
+int shell_help(char **args);
+int shell_exit(char **args);
+int shell_env(char **args);
 
+/* Built-in command functions */
+extern char **environ;
 
-
-
-#endif
+#endif /* SHELL_H */
