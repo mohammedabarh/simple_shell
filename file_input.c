@@ -1,31 +1,24 @@
 #include "shell.h"
 
-int status = 0;
+void process_file(char *filename) {
+    FILE *file = fopen(filename, "r");
+    char *line = NULL;
+    size_t len = 0;
+    ssize_t read;
 
-int main(int argc, char **argv)
-{
-    char *input;
-    char **args;
-    int exec_status = 1;
-
-    if (argc == 2) {
-        process_file(argv[1]);
-        return 0;
+    if (file == NULL) {
+        fprintf(stderr, "Error: Cannot open file %s\n", filename);
+        exit(EXIT_FAILURE);
     }
 
-    while (exec_status) {
-        printf("$ ");
-        input = read_line();
-
-        if (!input)
-            break;
-
-        char *comment = strchr(input, '#');
+    while ((read = getline(&line, &len, file)) != -1) {
+        line[strcspn(line, "\n")] = '\0';  // Remove newline
+        char *comment = strchr(line, '#');
         if (comment) {
             *comment = '\0';
         }
 
-        char **commands = split_line(input, ";");
+        char **commands = split_line(line, ";");
         for (int i = 0; commands[i] != NULL; i++) {
             char **logical_ops = split_logical_ops(commands[i]);
             int prev_status = 1;
@@ -39,7 +32,7 @@ int main(int argc, char **argv)
                     continue;
                 }
 
-                args = split_line(logical_ops[j], TOKEN_DELIM);
+                char **args = split_line(logical_ops[j], TOKEN_DELIM);
                 expand_variables(args);
                 prev_status = execute(args);
                 free(args);
@@ -48,8 +41,8 @@ int main(int argc, char **argv)
             free(logical_ops);
         }
         free(commands);
-        free(input);
     }
 
-    return 0;
+    free(line);
+    fclose(file);
 }

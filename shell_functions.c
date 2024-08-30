@@ -1,5 +1,26 @@
-
 #include "shell.h"
+
+char *read_line(void)
+{
+    char *line = NULL;
+    size_t bufsize = 0;
+    ssize_t characters;
+
+    characters = getline(&line, &bufsize, stdin);
+
+    if (characters == -1) {
+        if (feof(stdin)) {
+            free(line);
+            exit(EXIT_SUCCESS);
+        } else {
+            free(line);
+            perror("read_line");
+            exit(EXIT_FAILURE);
+        }
+    }
+
+    return line;
+}
 
 char **split_line(char *line, char *delim)
 {
@@ -7,25 +28,21 @@ char **split_line(char *line, char *delim)
     char **tokens = malloc(bufsize * sizeof(char*));
     char *token;
 
-    if (!tokens)
-    {
-        fprintf(stderr, "Allocation error\n");
+    if (!tokens) {
+        fprintf(stderr, "split_line: allocation error\n");
         exit(EXIT_FAILURE);
     }
 
     token = strtok(line, delim);
-    while (token != NULL)
-    {
+    while (token != NULL) {
         tokens[position] = token;
         position++;
 
-        if (position >= bufsize)
-        {
+        if (position >= bufsize) {
             bufsize += BUFFER_SIZE;
             tokens = realloc(tokens, bufsize * sizeof(char*));
-            if (!tokens)
-            {
-                fprintf(stderr, "Allocation error\n");
+            if (!tokens) {
+                fprintf(stderr, "split_line: allocation error\n");
                 exit(EXIT_FAILURE);
             }
         }
@@ -36,48 +53,26 @@ char **split_line(char *line, char *delim)
     return tokens;
 }
 
-char **split_logical_ops(char *line)
+int launch(char **args)
 {
-    int bufsize = BUFFER_SIZE, position = 0;
-    char **tokens = malloc(bufsize * sizeof(char*));
-    char *token;
-    char *rest = line;
+    pid_t pid;
+    int status;
 
-    if (!tokens)
-    {
-        fprintf(stderr, "Allocation error\n");
+    pid = fork();
+    if (pid == 0) {
+        if (execvp(args[0], args) == -1) {
+            perror("launch");
+        }
         exit(EXIT_FAILURE);
+    } else if (pid < 0) {
+        perror("launch");
+    } else {
+        do {
+            waitpid(pid, &status, WUNTRACED);
+        } while (!WIFEXITED(status) && !WIFSIGNALED(status));
     }
 
-    while ((token = strtok_r(rest, "&|", &rest)))
-    {
-        tokens[position] = token;
-        position++;
-
-        if (position >= bufsize)
-        {
-            bufsize += BUFFER_SIZE;
-            tokens = realloc(tokens, bufsize * sizeof(char*));
-            if (!tokens)
-            {
-                fprintf(stderr, "Allocation error\n");
-                exit(EXIT_FAILURE);
-            }
-        }
-
-        if (rest[0] == '&')
-        {
-            tokens[position++] = "&&";
-            rest++;
-        }
-        else if (rest[0] == '|')
-        {
-            tokens[position++] = "||";
-            rest++;
-        }
-    }
-    tokens[position] = NULL;
-    return tokens;
+    return WEXITSTATUS(status);
 }
 
 int execute(char **args)
@@ -89,7 +84,8 @@ int execute(char **args)
         "exit",
         "env",
         "setenv",
-        "unsetenv"
+        "unsetenv",
+        "alias"
     };
     int (*builtin_func[]) (char **) = {
         &shell_cd,
@@ -97,13 +93,14 @@ int execute(char **args)
         &shell_exit,
         &shell_env,
         &shell_setenv,
-        &shell_unsetenv
+        &shell_unsetenv,
+        &shell_alias
     };
 
     if (args[0] == NULL)
         return 1;
 
-    for (i = 0; i < 6; i++)
+    for (i = 0; i < 7; i++)
     {
         if (strcmp(args[0], builtin_str[i]) == 0)
             return (*builtin_func[i])(args);
@@ -112,83 +109,55 @@ int execute(char **args)
     return launch(args);
 }
 
-int launch(char **args)
-{
-    pid_t pid;
-    int status;
-    char *command_path;
-
-    pid = fork();
-    if (pid == 0)
-    {
-        /* Child process */
-        command_path = get_location(args[0]);
-        if (command_path == NULL)
-        {
-            fprintf(stderr, "%s: command not found\n", args[0]);
-            exit(EXIT_FAILURE);
+void expand_variables(char **args) {
+    int i;
+    for (i = 0; args[i] != NULL; i++) {
+        if (strcmp(args[i], "$?") == 0) {
+            free(args[i]);
+            args[i] = malloc(16);
+            snprintf(args[i], 16, "%d", WEXITSTATUS(status));
+        } else if (strcmp(args[i], "$$") == 0) {
+            free(args[i]);
+            args[i] = malloc(16);
+            snprintf(args[i], 16, "%d", getpid());
+        } else if (args[i][0] == '$') {
+            char *value = getenv(args[i] + 1);
+            if (value) {
+                free(args[i]);
+                args[i] = strdup(value);
+            }
         }
-
-        if (execve(command_path, args, environ) == -1)
-        {
-            perror("Error:");
-        }
-        exit(EXIT_FAILURE);
     }
-    else if (pid < 0)
-    {
-        /* Error forking */
-        perror("Error:");
-    }
-    else
-    {
-        /* Parent process */
-        do {
-            waitpid(pid, &status, WUNTRACED);
-        } while (!WIFEXITED(status) && !WIFSIGNALED(status));
-    }
-
-    return 1;
 }
 
-char *get_location(char *command)
+char **split_logical_ops(char *line)
 {
-    char *path, *path_copy, *path_token, *file_path;
-    int command_length, directory_length;
-    struct stat buffer;
+    int bufsize = BUFFER_SIZE, position = 0;
+    char **tokens = malloc(bufsize * sizeof(char*));
+    char *token, *rest = line;
 
-    path = getenv("PATH");
-    if (path)
-    {
-        path_copy = strdup(path);
-        command_length = strlen(command);
-        path_token = strtok(path_copy, ":");
-        while (path_token != NULL)
-        {
-            directory_length = strlen(path_token);
-            file_path = malloc(command_length + directory_length + 2);
-            strcpy(file_path, path_token);
-            strcat(file_path, "/");
-            strcat(file_path, command);
-            strcat(file_path, "\0");
-
-            if (stat(file_path, &buffer) == 0)
-            {
-                free(path_copy);
-                return (file_path);
-            }
-            else
-            {
-                free(file_path);
-                path_token = strtok(NULL, ":");
-            }
-        }
-        free(path_copy);
-        if (stat(command, &buffer) == 0)
-        {
-            return (command);
-        }
-        return (NULL);
+    if (!tokens) {
+        fprintf(stderr, "split_logical_ops: allocation error\n");
+        exit(EXIT_FAILURE);
     }
-    return (NULL);
+
+    while ((token = strstr(rest, "&&")) != NULL || (token = strstr(rest, "||")) != NULL) {
+        *token = '\0';
+        tokens[position++] = rest;
+        tokens[position++] = (*token == '&') ? "&&" : "||";
+        rest = token + 2;
+
+        if (position >= bufsize) {
+            bufsize += BUFFER_SIZE;
+            tokens = realloc(tokens, bufsize * sizeof(char*));
+            if (!tokens) {
+                fprintf(stderr, "split_logical_ops: allocation error\n");
+                exit(EXIT_FAILURE);
+            }
+        }
+    }
+
+    tokens[position++] = rest;
+    tokens[position] = NULL;
+    return tokens;
 }
