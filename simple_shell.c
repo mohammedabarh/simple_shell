@@ -1,52 +1,75 @@
 #include "shell.h"
 
-int status = 0;
-
-int main(int argc, char **argv)
+/**
+ * main - Entry point for the simple shell
+ *
+ * Return: Always 0 (Success)
+ */
+int main(void)
 {
-    char *input;
+    char *input = NULL;
+    size_t input_size = 0;
+    ssize_t read_size;
+    char **commands;
     char **args;
-    int exec_status = 1;
+    int status = 1;
+    int i, exec_status;
 
-    if (argc == 2) {
-        process_file(argv[1]);
-        return 0;
-    }
+    while (status)
+    {
+        if (isatty(STDIN_FILENO))
+            printf("($) ");
 
-    while (exec_status) {
-        printf("$ ");
-        input = read_line();
+        read_size = getline(&input, &input_size, stdin);
 
-        char *comment = strchr(input, '#');
-        if (comment) {
-            *comment = '\0';
+        if (read_size == -1)
+        {
+            if (isatty(STDIN_FILENO))
+                printf("\n");
+            break;
         }
 
-        char **commands = split_line(input, ";");
-        for (int i = 0; commands[i] != NULL; i++) {
+        /* Remove newline character */
+        input[strcspn(input, "\n")] = '\0';
+
+        commands = split_line(input, ";");
+        for (i = 0; commands[i] != NULL; i++)
+        {
             char **logical_ops = split_logical_ops(commands[i]);
+            int j;
             int prev_status = 1;
 
-            for (int j = 0; logical_ops[j] != NULL; j++) {
-                if (strcmp(logical_ops[j], "&&") == 0) {
-                    if (prev_status == 0) break;
+            for (j = 0; logical_ops[j] != NULL; j++)
+            {
+                if (strcmp(logical_ops[j], "&&") == 0)
+                {
+                    if (prev_status == 0)
+                        break;
                     continue;
-                } else if (strcmp(logical_ops[j], "||") == 0) {
-                    if (prev_status != 0) break;
+                }
+                else if (strcmp(logical_ops[j], "||") == 0)
+                {
+                    if (prev_status != 0)
+                        break;
                     continue;
                 }
 
                 args = split_line(logical_ops[j], TOKEN_DELIM);
-                expand_variables(args);
-                prev_status = execute(args);
+                exec_status = execute(args);
                 free(args);
+
+                prev_status = exec_status;
             }
 
             free(logical_ops);
+
+            if (exec_status == 0)
+                break;
         }
         free(commands);
-        free(input);
     }
 
+    free(input);
     return 0;
 }
+
