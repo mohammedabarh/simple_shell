@@ -12,7 +12,7 @@ int shell_cd(char **args)
     return 1;
 }
 
-int shell_help(char **args)
+int shell_help(char **args __attribute__((unused)))
 {
     printf("Simple Shell\n");
     printf("Type program names and arguments, and hit enter.\n");
@@ -21,12 +21,12 @@ int shell_help(char **args)
     return 1;
 }
 
-int shell_exit(char **args)
+int shell_exit(char **args __attribute__((unused)))
 {
     return 0;
 }
 
-int shell_env(char **args)
+int shell_env(char **args __attribute__((unused)))
 {
     char **env = environ;
     while (*env) {
