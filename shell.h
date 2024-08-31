@@ -5,49 +5,30 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
-#include <sys/wait.h>
 #include <sys/types.h>
-#include <errno.h>
-#include <fcntl.h>
+#include <sys/wait.h>
 #include <sys/stat.h>
-#include <limits.h>
+#include <fcntl.h>
+#include <errno.h>
+#include <signal.h>
 
 #define BUFFER_SIZE 1024
 #define TOKEN_DELIM " \t\r\n\a"
-#define MAX_ALIASES 100
 
 extern char **environ;
-extern int status;
 
-typedef struct {
-    char *name;
-    char *value;
-} Alias;
-
-extern Alias aliases[MAX_ALIASES];
-extern int alias_count;
-
-/* Function prototypes*/
+// Function prototypes
 char *read_line(void);
-char **split_line(char *line, char *delim);
+char **split_line(char *line);
 int execute(char **args);
 int launch(char **args);
-void expand_variables(char **args);
-char **split_logical_ops(char *line);
-void process_file(char *filename);
-
-/* Builtin function prototypes*/
+char *get_location(char *command);
+int is_builtin(char *command);
+int execute_builtin(char **args);
 int shell_cd(char **args);
-int shell_help(char **args);
 int shell_exit(char **args);
 int shell_env(char **args);
-int shell_setenv(char **args);
-int shell_unsetenv(char **args);
-int shell_alias(char **args);
-
-/* Alias function prototypes*/
-void add_alias(char *name, char *value);
-char *get_alias(char *name);
-void print_aliases(void);
+void print_error(char *command, char *message);
+void sigint_handler(int sig);
 
 #endif

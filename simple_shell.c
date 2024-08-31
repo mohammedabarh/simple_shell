@@ -1,55 +1,30 @@
 #include "shell.h"
 
-int status = 0;
+void sigint_handler(int sig) {
+    (void)sig;
+    write(STDOUT_FILENO, "\n$ ", 3);
+}
 
-int main(int argc, char **argv)
-{
-    char *input;
+int main(void) {
+    char *line;
     char **args;
-    int exec_status = 1;
+    int status = 1;
 
-    if (argc == 2) {
-        process_file(argv[1]);
-        return 0;
-    }
+    signal(SIGINT, sigint_handler);
 
-    while (exec_status) {
+    while (status) {
         printf("$ ");
-        input = read_line();
-
-        if (!input)
+        line = read_line();
+        if (line == NULL) {  
+            printf("\n");
             break;
-
-        char *comment = strchr(input, '#');
-        if (comment) {
-            *comment = '\0';
         }
+        args = split_line(line);
+        status = execute(args);
 
-        char **commands = split_line(input, ";");
-        for (int i = 0; commands[i] != NULL; i++) {
-            char **logical_ops = split_logical_ops(commands[i]);
-            int prev_status = 1;
-
-            for (int j = 0; logical_ops[j] != NULL; j++) {
-                if (strcmp(logical_ops[j], "&&") == 0) {
-                    if (prev_status == 0) break;
-                    continue;
-                } else if (strcmp(logical_ops[j], "||") == 0) {
-                    if (prev_status != 0) break;
-                    continue;
-                }
-
-                args = split_line(logical_ops[j], TOKEN_DELIM);
-                expand_variables(args);
-                prev_status = execute(args);
-                free(args);
-            }
-
-            free(logical_ops);
-        }
-        free(commands);
-        free(input);
+        free(line);
+        free(args);
     }
 
-    return 0;
+    return EXIT_SUCCESS;
 }
