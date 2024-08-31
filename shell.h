@@ -22,6 +22,7 @@
 #define ALIAS_SIZE 100
 
 extern char **environ;
+extern alias_t aliases[ALIAS_SIZE];  // Declare extern alias array
 
 // Struct definitions
 typedef struct alias {
