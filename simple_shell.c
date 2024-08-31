@@ -38,4 +38,3 @@ int main(void) {
     save_aliases();
     return EXIT_SUCCESS;
 }
-

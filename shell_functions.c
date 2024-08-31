@@ -24,7 +24,7 @@ command_t *split_commands(char *line) {
     command_t *commands = malloc(sizeof(command_t));
     int bufsize = BUFFER_SIZE, position = 0;
     char *token, *saveptr;
-
+    
     commands->commands = malloc(bufsize * sizeof(char*));
     commands->operators = malloc(bufsize * sizeof(char));
 
@@ -196,6 +196,5 @@ char *get_location(char *command) {
 }
 
 void print_error(char *command, char *message) {
-    fprintf(stderr, "%s: %s\n", command, message);
+    fprintf(stderr, "./hsh: %s: %s\n", command, message);
 }
-

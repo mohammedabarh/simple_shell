@@ -1,5 +1,4 @@
 #include "shell.h"
-#include <ctype.h>  // For isalpha and isalnum
 
 char *replace_variables(char *str) {
     char *result = malloc(strlen(str) * 2);
@@ -54,4 +53,3 @@ void remove_comments(char *str) {
         *comment_start = '\0';
     }
 }
-

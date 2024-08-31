@@ -48,13 +48,13 @@ void save_aliases(void) {
 void load_aliases(void) {
     FILE *fp = fopen(ALIAS_FILE, "r");
     if (fp == NULL) {
-        return;  
+        return;  // It's okay if the file doesn't exist yet
     }
     char *line = NULL;
     size_t len = 0;
     ssize_t read;
     while ((read = getline(&line, &len, fp)) != -1) {
-        line[strcspn(line, "\n")] = 0;  
+        line[strcspn(line, "\n")] = 0;  // Remove newline
         char *name = strtok(line, "=");
         char *value = strtok(NULL, "");
         if (name && value) {

@@ -121,7 +121,7 @@ int shell_alias(char **args) {
             }
         }
     } else if (args[2] == NULL) {
-        
+        // Print specific alias
         char *value = get_alias(args[1]);
         if (value != NULL) {
             printf("%s='%s'\n", args[1], value);
@@ -130,7 +130,7 @@ int shell_alias(char **args) {
             return 1;
         }
     } else {
-        
+        // Set alias
         char *name = args[1];
         char *value = args[2];
         for (int i = 3; args[i] != NULL; i++) {
